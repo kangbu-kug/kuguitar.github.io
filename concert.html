@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>연주회 · 고려대학교 고전기타부</title>
+  <meta name="description" content="고려대학교 고전기타부 연주회 포스터, 프로그램, 공연 영상.">
+  <meta name="theme-color" content="#9e1b32">
+  <link rel="icon" href="assets/photos/logo.webp">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/site.js"></script>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap" id="concert-root"></main>
+
+  <footer id="site-footer"></footer>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () { KUG.load().then(function (db) {
+      var K = window.KUG, C = db.concerts, esc = K.esc;
+      var root = document.getElementById('concert-root');
+      var id = new URLSearchParams(location.search).get('id');
+      var i = C.findIndex(function (c) { return c.id === id; });
+
+      if (i < 0) {
+        root.innerHTML = '<div class="empty"><p>연주회를 찾을 수 없어요.</p><p style="margin-top:20px"><a class="btn btn-ghost" href="concerts/">아카이브로 돌아가기</a></p></div>';
+        return;
+      }
+
+      if (C[i].slug) { location.replace('concert/' + C[i].slug + '/'); return; }
+
+      var c = C[i], title = K.titleOf(c);
+      document.title = title + ' · 고려대학교 고전기타부';
+      var newer = C[i - 1], older = C[i + 1];
+      var embed = K.youtubeEmbed(c.video);
+
+      var poster = K.posterMedia(c, false);
+
+      var facts = [
+        ['구분', K.typeLabel(c.type)],
+        ['일시', K.fmtDate(c.date)],
+        ['장소', c.venue],
+        ['지휘', c.conductor]
+      ].filter(function (f) { return f[1]; }).map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + esc(f[1]) + '</dd>'; }).join('');
+
+      var actions = '';
+      if (c.video) actions += '<a class="btn btn-primary" href="' + esc(c.video) + '" target="_blank" rel="noopener">' + K.ICON.youtube + '공연 영상 보기</a>';
+      if (c.pamphlet) actions += '<a class="btn btn-ghost" href="https://www.notion.so/' + esc(c.nid) + '" target="_blank" rel="noopener">' + K.ICON.external + '팜플렛 ' + c.pamphlet + '쪽 보기</a>';
+
+      var program = '';
+      if (c.program.length) {
+        program = '<section class="program"><h2>프로그램</h2>' + c.program.map(function (g) {
+          var isCond = /^지휘/.test(g.performers);
+          var head = g.performers ? '<div class="performers' + (isCond ? ' conductor' : '') + '">' + esc(g.performers) + '</div>' : '';
+          var pieces = g.pieces.length ? '<ul class="pieces">' + g.pieces.map(function (p) {
+            return '<li class="piece"><span class="piece-title">' + esc(p.title) + '</span><span class="piece-composer">' + esc(p.composer) + '</span>' +
+              (p.movements ? '<ul class="movements">' + p.movements.map(function (m) { return '<li>' + esc(m.replace(/^\d+\s*\.\s*/, '')) + '</li>'; }).join('') + '</ul>' : '') + '</li>';
+          }).join('') + '</ul>' : '';
+          var roster = g.roster ? '<div class="roster">' + g.roster.map(function (r) {
+            var m = r.match(/^(\S+)\s+(.*)$/);
+            return m ? '<div><b>' + esc(m[1]) + '</b><span>' + esc(m[2]) + '</span></div>' : '<div>' + esc(r) + '</div>';
+          }).join('') + '</div>' : '';
+          return '<div class="program-group">' + head + pieces + roster + '</div>';
+        }).join('') + '</section>';
+      } else {
+        program = '<section class="program"><h2>프로그램</h2><p style="padding:24px 0;color:var(--muted)">아직 정리된 프로그램이 없어요.</p></section>';
+      }
+
+      function navLink(x, cls, label) {
+        return x ? '<a class="' + cls + '" href="concert.html?id=' + esc(x.id) + '"><span>' + label + '</span><strong>' + esc(K.titleOf(x)) + '</strong></a>' : '<div></div>';
+      }
+
+      root.innerHTML =
+        '<div class="concert">' +
+        '<aside class="concert-aside"><div class="poster-frame">' + poster + '</div></aside>' +
+        '<article>' +
+        '<nav class="crumbs" aria-label="현재 위치"><a href="concerts/">연주회 아카이브</a><span>/</span><a href="concerts/?type=' + encodeURIComponent(c.type) + '">' + esc(K.typeLabel(c.type)) + '</a></nav>' +
+        '<span class="badge" data-type="' + esc(c.type) + '">' + esc(K.typeLabel(c.type)) + '</span>' +
+        '<h1 class="concert-title">' + esc(title) + '</h1>' +
+        '<dl class="facts">' + facts + '</dl>' +
+        (actions ? '<div class="concert-actions">' + actions + '</div>' : '') +
+        (embed ? '<div class="video-embed"><iframe src="' + esc(embed) + '" title="' + esc(title) + ' 공연 영상" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>' : '') +
+        program +
+        '<nav class="concert-nav" aria-label="이전·다음 연주회">' + navLink(older, 'prev', '← 이전 연주회') + navLink(newer, 'next', '다음 연주회 →') + '</nav>' +
+        '</article></div>';
+    }); });
+  </script>
+</body>
+</html>

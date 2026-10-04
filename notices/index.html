@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <base href="../">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>공지사항 · 고려대학교 고전기타부</title>
+  <meta name="description" content="고려대학교 고전기타부 공지사항.">
+  <meta name="theme-color" content="#9e1b32">
+  <link rel="icon" href="assets/photos/logo.webp">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/site.js"></script>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main>
+    <section class="page-hero">
+      <div class="wrap">
+        <span class="eyebrow">Notice</span>
+        <h1>공지사항</h1>
+        <p>연주회 일정, 공시 등 동아리 소식을 전합니다.</p>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <div class="notice-page">
+        <div class="chips" id="filters" role="group" aria-label="대상" style="margin-bottom:24px"></div>
+        <div id="notices"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () { KUG.load().then(function (db) {
+      var K = window.KUG, N = db.notices, esc = K.esc;
+      var CATS = ['전체', '재학생', '졸업생', '그 외'];
+      var cat = '전체';
+
+      function body(n) {
+        var html = n.body.map(function (b) {
+          if (typeof b === 'string') return '<p>' + esc(b) + '</p>';
+          if (b.h) return '<h4>' + esc(b.h) + '</h4>';
+          if (b.list) return '<ul>' + b.list.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>';
+          return '';
+        }).join('');
+        if (n.attachment) html += '<a class="attachment" href="' + esc(n.attachment.url) + '" target="_blank" rel="noopener">' + K.ICON.file + esc(n.attachment.label) + '</a>';
+        return html;
+      }
+
+      function render() {
+        document.getElementById('filters').innerHTML = CATS.map(function (c) {
+          return '<button type="button" class="chip" aria-pressed="' + (c === cat) + '" data-cat="' + c + '">' + c + '</button>';
+        }).join('');
+        var list = N.filter(function (n) { return cat === '전체' || n.category === cat; });
+        document.getElementById('notices').innerHTML = list.length ? list.map(function (n) {
+          return '<details class="notice-item" id="' + esc(n.id) + '">' +
+            '<summary><span class="badge">' + esc(n.tag) + '</span><span class="title">' + esc(n.title) + '</span>' +
+            '<time datetime="' + n.date + '">' + K.fmtDate(n.date, 'short') + '</time><span class="chev">' + K.ICON.chevron + '</span></summary>' +
+            '<div class="notice-body">' + body(n) + '</div></details>';
+        }).join('') : '<div class="empty">등록된 공지가 없어요.</div>';
+        openFromHash();
+      }
+      function openFromHash() {
+        var el = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if (el && el.tagName === 'DETAILS') { el.open = true; el.scrollIntoView(); }
+      }
+      document.getElementById('filters').addEventListener('click', function (e) {
+        var b = e.target.closest('.chip'); if (!b) return;
+        cat = b.dataset.cat; render();
+      });
+      window.addEventListener('hashchange', openFromHash);
+      render();
+    }); });
+  </script>
+</body>
+</html>

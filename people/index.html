@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <base href="../">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>회장단 · 고려대학교 고전기타부</title>
+  <meta name="description" content="고려대학교 고전기타부 현 회장단과 1974년부터의 역대 회장단.">
+  <meta name="theme-color" content="#9e1b32">
+  <link rel="icon" href="assets/photos/logo.webp">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/site.js"></script>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main>
+    <section class="page-hero">
+      <div class="wrap">
+        <span class="eyebrow">People</span>
+        <h1>회장단</h1>
+        <p>회장단은 회장, 부회장, 총무로 구성되며 정기총회에서 회원들의 투표로 선출됩니다.</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:56px">
+      <div class="wrap">
+        <h2 class="section-title" id="current-title" style="font-size:26px;margin-bottom:24px"></h2>
+        <div class="current" id="current"></div>
+      </div>
+    </section>
+
+    <section class="section alt" style="padding-top:56px">
+      <div class="wrap">
+        <div class="section-head" style="margin-bottom:24px">
+          <h2 class="section-title" style="font-size:26px">역대 회장단</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="officers">
+            <thead><tr><th scope="col">대</th><th scope="col">연도</th><th scope="col">회장</th><th scope="col">부회장</th><th scope="col">총무</th></tr></thead>
+            <tbody id="history"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () { KUG.load().then(function (db) {
+      var K = window.KUG, O = db.officers, esc = K.esc;
+      var cur = O[0];
+      document.getElementById('current-title').textContent = cur.year + '년 제' + cur.gen + '대 회장단';
+      var people = [].concat(
+        cur.president.map(function (p) { return ['회장', p]; }),
+        cur.vice.map(function (p) { return ['부회장', p]; }),
+        cur.treasurer.map(function (p) { return ['총무', p]; })
+      );
+      document.getElementById('current').innerHTML = people.map(function (x) {
+        return '<div class="person"><span class="role">' + x[0] + '</span><span class="name">' + esc(x[1].name) + '</span><span class="dept">' + esc(x[1].dept) + '</span></div>';
+      }).join('');
+
+      function names(list) {
+        if (!list.length) return '<span style="color:var(--muted)">—</span>';
+        return list.map(function (p) { return '<span class="p">' + esc(p.name) + (p.dept ? '<small>' + esc(p.dept) + '</small>' : '') + '</span>'; }).join('');
+      }
+      document.getElementById('history').innerHTML = O.map(function (r) {
+        return '<tr><td class="gen">' + r.gen + '대</td><td class="yr">' + r.year + '</td><td>' + names(r.president) + '</td><td>' + names(r.vice) + '</td><td>' + names(r.treasurer) + '</td></tr>';
+      }).join('');
+    }); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <base href="../">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>연주회 아카이브 · 고려대학교 고전기타부</title>
+  <meta name="description" content="1974년 창립기념연주회부터 지금까지, 고려대학교 고전기타부의 모든 연주회 포스터와 프로그램.">
+  <meta name="theme-color" content="#9e1b32">
+  <link rel="icon" href="assets/photos/logo.webp">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/site.js"></script>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main>
+    <section class="page-hero">
+      <div class="wrap">
+        <span class="eyebrow">Archive</span>
+        <h1>연주회 아카이브</h1>
+        <p id="archive-lead">1974년 창립기념연주회부터 지금까지 고전기타부가 올린 무대입니다. 공연자 이름이나 곡명, 작곡가로도 찾아볼 수 있어요.</p>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <div class="wrap">
+        <div class="view-toggle" role="group" aria-label="보기 방식">
+          <button type="button" data-view="grid" aria-pressed="true" title="그리드로 보기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+            <span class="sr-only">그리드</span>
+          </button>
+          <button type="button" data-view="list" aria-pressed="false" title="리스트로 보기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.6"/></svg>
+            <span class="sr-only">리스트</span>
+          </button>
+        </div>
+        <div class="chips" role="group" aria-label="연주회 구분" id="filters"></div>
+        <label class="search">
+          <span class="sr-only">연주회 검색</span>
+          <span data-icon="search"></span>
+          <input type="search" id="q" placeholder="공연자, 곡명, 작곡가, 연도 검색" autocomplete="off">
+        </label>
+      </div>
+    </div>
+
+    <div class="wrap" style="padding-bottom:96px">
+      <div id="results"></div>
+    </div>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () { KUG.load().then(function (db) {
+      var K = window.KUG, C = db.concerts;
+      document.querySelectorAll('[data-icon]').forEach(function (el) { el.outerHTML = K.ICON[el.dataset.icon]; });
+
+      var TYPES = [['all', '전체'], ['정기', '정기'], ['신입', '신입생환영'], ['교우', '교우'], ['ETC', '특별']];
+      var params = new URLSearchParams(location.search);
+      var savedView = null;
+      try { savedView = localStorage.getItem('kug-archive-view'); } catch (e) {}
+      var state = {
+        type: params.get('type') || 'all',
+        q: params.get('q') || '',
+        view: params.get('view') === 'list' || (!params.get('view') && savedView === 'list') ? 'list' : 'grid'
+      };
+
+      // search index: title + venue + conductor + year + every performer/piece/composer
+      C.forEach(function (c) {
+        var parts = [K.titleOf(c), c.venue, c.conductor, (c.date || '').slice(0, 4)];
+        c.program.forEach(function (g) {
+          parts.push(g.performers);
+          g.pieces.forEach(function (p) { parts.push(p.title, p.composer); });
+          (g.roster || []).forEach(function (r) { parts.push(r); });
+        });
+        c._idx = parts.join('\n').toLowerCase();
+      });
+
+      var filters = document.getElementById('filters');
+      filters.innerHTML = TYPES.map(function (t) {
+        var n = t[0] === 'all' ? C.length : C.filter(function (c) { return c.type === t[0]; }).length;
+        return '<button type="button" class="chip" data-type="' + t[0] + '" aria-pressed="false">' + t[1] + '<span class="count">' + n + '</span></button>';
+      }).join('');
+      filters.addEventListener('click', function (e) {
+        var b = e.target.closest('.chip'); if (!b) return;
+        state.type = b.dataset.type; render(); sync();
+      });
+
+      var vt = document.querySelector('.view-toggle');
+      vt.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        state.view = b.dataset.view;
+        try { localStorage.setItem('kug-archive-view', state.view); } catch (err) {}
+        render(); sync();
+      });
+
+      var q = document.getElementById('q');
+      q.value = state.q;
+      var t;
+      q.addEventListener('input', function () {
+        clearTimeout(t); t = setTimeout(function () { state.q = q.value.trim(); render(); sync(); }, 120);
+      });
+
+      function sync() {
+        var p = new URLSearchParams();
+        if (state.type !== 'all') p.set('type', state.type);
+        if (state.q) p.set('q', state.q);
+        if (state.view === 'list') p.set('view', 'list');
+        history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : ''));
+      }
+
+      function hitLine(c, term) {
+        // show why a concert matched when the hit is inside the program
+        if (!term || K.titleOf(c).toLowerCase().indexOf(term) >= 0) return '';
+        for (var i = 0; i < c.program.length; i++) {
+          var g = c.program[i];
+          for (var j = 0; j < g.pieces.length; j++) {
+            var p = g.pieces[j];
+            if ((p.title + ' ' + p.composer).toLowerCase().indexOf(term) >= 0)
+              return '<div class="search-hit">♪ ' + K.esc(p.title) + (p.composer ? ' — ' + K.esc(p.composer) : '') + '</div>';
+          }
+          if (g.performers.toLowerCase().indexOf(term) >= 0) return '<div class="search-hit">' + K.esc(g.performers) + '</div>';
+          if ((g.roster || []).join(' ').toLowerCase().indexOf(term) >= 0) return '<div class="search-hit">합주 참여</div>';
+        }
+        return '';
+      }
+
+      function render() {
+        filters.querySelectorAll('.chip').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.type === state.type)); });
+        var term = state.q.toLowerCase();
+        var list = C.filter(function (c) {
+          return (state.type === 'all' || c.type === state.type) && (!term || c._idx.indexOf(term) >= 0);
+        });
+        var out = document.getElementById('results');
+        if (!list.length) { out.innerHTML = '<div class="empty">조건에 맞는 연주회가 없어요.</div>'; return; }
+        vt.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === state.view)); });
+
+        var groups = {}, order = [];
+        var unit = state.view === 'list' ? 1 : 10;   // 리스트는 연도별, 그리드는 10년 단위
+        list.forEach(function (c) {
+          var y = c.date ? Number(c.date.slice(0, 4)) : 0;
+          var d = y ? Math.floor(y / unit) * unit : 0;
+          if (!groups[d]) { groups[d] = []; order.push(d); }
+          groups[d].push(c);
+        });
+
+        if (state.view === 'list') {
+          out.innerHTML = order.map(function (y) {
+            return '<section class="year-group"><div class="year-label"><h2>' + (y || '미상') + '</h2><span>' + groups[y].length + '회</span></div>' +
+              '<div class="year-rows">' + groups[y].map(function (c) { return listRow(c, term); }).join('') + '</div></section>';
+          }).join('');
+          return;
+        }
+
+        out.innerHTML = order.map(function (d) {
+          return '<section class="decade"><div class="decade-head"><h2>' + (d ? d + 's' : '연도 미상') + '</h2><span>' + groups[d].length + '개 연주회</span></div>' +
+            '<div class="poster-grid">' + groups[d].map(function (c) { return K.posterCard(c, hitLine(c, term)); }).join('') + '</div></section>';
+        }).join('');
+      }
+
+      function listRow(c, term) {
+        var href = c.slug ? 'concert/' + c.slug + '/' : 'concert.html?id=' + K.esc(c.id);
+        var day = c.date ? c.date.slice(5).replace('-', '.') : '';
+        var play = c.video ? '<span class="lr-play" title="공연 영상 있음">' + K.ICON.play + '</span>' : '';
+        return '<a class="list-row" href="' + href + '">' +
+          '<span class="lr-date">' + day + '</span>' +
+          '<span class="badge" data-type="' + K.esc(c.type) + '">' + K.esc(c.type === 'ETC' ? '특별' : c.type) + '</span>' +
+          '<span class="lr-main"><span class="lr-title">' + K.esc(K.titleOf(c)) + play + '</span>' + hitLine(c, term) + '</span>' +
+          '<span class="lr-venue">' + K.esc(c.venue || '') + '</span>' +
+          '</a>';
+      }
+      render();
+    }); });
+  </script>
+</body>
+</html>
