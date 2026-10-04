@@ -711,13 +711,12 @@ table.officers { width: 100%; border-collapse: collapse; font-size: 15px; min-wi
 .player[hidden] { display: none; }
 .player { margin-top: 28px; scroll-margin-top: calc(var(--header-h) + 16px); }
 .player-grid {
-  display: grid; grid-template-columns: minmax(0, 1fr) 316px;
   border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
   background: var(--surface); box-shadow: var(--shadow-sm);
 }
 .player-grid .video-embed { margin: 0; border-radius: 0; aspect-ratio: 16 / 9; min-width: 0; }
 
-.tracklist { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line); }
+.tracklist { border-top: 1px solid var(--line); }
 .tracklist-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); }
 .tl-eyebrow {
   display: block; font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
@@ -726,7 +725,7 @@ table.officers { width: 100%; border-collapse: collapse; font-size: 15px; min-wi
 .tracklist-head strong { display: block; font-size: 14.5px; line-height: 1.35; }
 .tl-meta { display: block; margin-top: 3px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .tracklist ol {
-  list-style: none; margin: 0; padding: 6px; flex: 1 1 0; min-height: 0;
+  list-style: none; margin: 0; padding: 6px; max-height: 380px;
   overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
 }
 .tracklist ol::-webkit-scrollbar { width: 8px; }
@@ -765,8 +764,3 @@ table.officers { width: 100%; border-collapse: collapse; font-size: 15px; min-wi
 .track.playing .tn, .track.playing:hover .tp { display: none; }
 .track.playing .eq { display: flex; }
 
-@media (max-width: 880px) {
-  .player-grid { grid-template-columns: 1fr; }
-  .tracklist { border-left: 0; border-top: 1px solid var(--line); }
-  .tracklist ol { max-height: 300px; flex: none; }
-}
