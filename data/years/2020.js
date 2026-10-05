@@ -59,7 +59,13 @@ KUG.addYear({
             },
             {
               "title": "Canon from Canon and Gigue in D Major, P.37",
-              "composer": "Johann Pachelbel"
+              "composer": "Johann Pachelbel",
+              "videos": [
+                {
+                  "url": "https://www.youtube.com/watch?v=K9s52KavA2I",
+                  "length": "5:45"
+                }
+              ]
             }
           ]
         },
