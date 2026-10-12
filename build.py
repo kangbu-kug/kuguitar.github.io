@@ -18,7 +18,7 @@
 import html, json, pathlib, re, shutil, unicodedata, urllib.parse
 
 HERE = pathlib.Path(__file__).parent
-SITE_URL = "https://www.kuguitar.com"   # canonical·og·sitemap 용. 끝에 / 없음
+SITE_URL = "https://kuguitar.com"   # canonical·og·sitemap 용. 끝에 / 없음
 
 TYPE_LABEL = {"정기": "정기연주회", "신입": "신입생환영연주회", "교우": "교우연주회", "ETC": "특별연주회"}
 
